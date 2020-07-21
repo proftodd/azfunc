@@ -37,8 +37,11 @@ namespace My.Functions
             string [] searchTerms = request.Query["st"];
 
             string requestBody = await new StreamReader(request.Body).ReadToEndAsync();
-            dynamic data = JsonSerializer.Deserialize<RequestBody>(requestBody);
-            searchTerms = searchTerms.Length > 0 ? searchTerms: data.searchTerms;
+            if (!string.IsNullOrEmpty(requestBody))
+            {
+                dynamic data = JsonSerializer.Deserialize<RequestBody>(requestBody);
+                searchTerms = searchTerms.Length > 0 ? searchTerms: data.searchTerms;
+            }
 
             string responseMessage = searchTerms.Length == 0
                 ? "This HTTP triggered function executed successfully. Pass one or more search terms (st=?) in the query or in the request body for more search hits."

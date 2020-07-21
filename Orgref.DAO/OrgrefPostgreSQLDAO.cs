@@ -33,7 +33,7 @@ namespace My.DAO
         order by entities.entity_id, descriptors.descriptor_id
         ";
 
-        public OrgrefPostgreSQLDAO(string host = "localhost", string username = "guest", string password = "guest")
+        public OrgrefPostgreSQLDAO(string host, string username, string password)
         {
             url = $"Host={host};Username={username};Password={password};Database=orgref";
         }
@@ -50,7 +50,10 @@ namespace My.DAO
                 search = NextSearch(search, restOfTheSearchTerms[i]);
             }
 
-            CompleteSearch(result, search);
+            if (search.Count > 0)
+            {
+                CompleteSearch(result, search);
+            }
             return result;
         }
 
