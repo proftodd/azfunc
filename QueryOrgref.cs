@@ -6,6 +6,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using My.DAO;
 using My.Models;
 
 namespace My.Functions
@@ -13,7 +14,7 @@ namespace My.Functions
     public static class QueryOrgref
     {
 
-        private static readonly OrgrefDAO dao = new OrgrefDAO();
+        private static readonly OrgrefDAO dao = new OrgrefPostgreSQLDAO();
 
         [FunctionName("QuerySubstance")]
         public static async Task<IActionResult> QuerySubstance(
