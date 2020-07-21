@@ -11,13 +11,18 @@ using My.Models;
 
 namespace My.Functions
 {
-    public static class QueryOrgref
+    public class QueryOrgref
     {
 
-        private static readonly OrgrefDAO dao = new OrgrefPostgreSQLDAO();
+        private readonly OrgrefDAO dao;
+
+        public QueryOrgref(OrgrefDAO dao)
+        {
+            this.dao = dao;
+        }
 
         [FunctionName("QuerySubstance")]
-        public static async Task<IActionResult> QuerySubstance(
+        public async Task<IActionResult> QuerySubstance(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "orgref/search")] HttpRequest request,
             ILogger log
         )
@@ -38,7 +43,7 @@ namespace My.Functions
         }
 
         [FunctionName("QueryStructure")]
-        public static async Task<IActionResult> QueryStructure(
+        public async Task<IActionResult> QueryStructure(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "orgref/structure/{inchiKey?}")] HttpRequest request,
             string inchiKey,
             ILogger log
