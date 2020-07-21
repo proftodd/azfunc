@@ -1,64 +1,22 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Npgsql;
 using NpgsqlTypes;
+using My.Models;
 
 namespace My.Functions
 {
-    class Entity
-    {
-        public int entityId { get; }
-        public int num9000 { get; }
-        public string inchiKey { get; }
-        public IList<string> descriptors { get; }
-
-        internal Entity() : this(0, 0, "", new List<string>()) {}
-
-        internal Entity(int entityId, int num9000, string inchiKey, List<string> descriptors)
-        {
-            this.entityId = entityId;
-            this.num9000 = num9000;
-            this.inchiKey = inchiKey;
-            this.descriptors = descriptors;
-        }
-
-        override public string ToString()
-        {
-            var descriptorString = string.Join(", ", descriptors);
-            return $"{(num9000 == 0 ? "" : num9000.ToString()): %4s} {inchiKey: %27s} {descriptorString}";
-        }
-    }
-    class SearchResult
-    {
-        public IList<string> searchTerms { get; }
-        public IList<Entity> entities { get; }
-
-        internal SearchResult() : this(new List<string>(), new List<Entity>()) {}
-
-        internal SearchResult(string [] searchTerms) : this(new List<string>(searchTerms), new List<Entity>()) {}
-
-        internal SearchResult(IList<string> searchTerms) : this(searchTerms, new List<Entity>()) {}
-
-        internal SearchResult(IList<string> searchTerms, IList<Entity> entities)
-        {
-            this.searchTerms = searchTerms;
-            this.entities = entities;
-        }
-
-        public void AddEntity(Entity entity)
-        {
-            entities.Add(entity);
-        }
-    }
-
     class OrgrefDAO
     {
         private readonly string url;
-        private const string NUM9000_QUERY = "select entity_id from nums where num_9000 = @searchTerm";
-        private const string INCHI_KEY_QUERY = "select entity_id from substances where inchi_key = @searchTerm";
-        private const string DESCRIPTOR_QUERY = "select entity_id from descriptors where descriptor ~* @searchTerm";
-        private const string LATER_NUM9000_QUERY = "select entity_id from nums where num_9000 = @searchTerm and entity_id = any(@entityIdList)";
+        private const string NUM_9000_PATTERN = "9\\d{3}";
+        private const string INCHI_KEY_PATTERN = "[A-Z]{14}-[A-Z]{10}-[A-Z]";
+        private const string FIRST_NUM_9000_QUERY = "select entity_id from nums where num_9000 = @searchTerm";
+        private const string FIRST_INCHI_KEY_QUERY = "select entity_id from substances where inchi_key = @searchTerm";
+        private const string FIRST_DESCRIPTOR_QUERY = "select entity_id from descriptors where descriptor ~* @searchTerm";
+        private const string LATER_NUM_9000_QUERY = "select entity_id from nums where num_9000 = @searchTerm and entity_id = any(@entityIdList)";
         private const string LATER_INCHI_KEY_QUERY = "select entity_id from substances where inchi_key = @searchTerm and entity_id = any(@entityIdList";
         private const string LATER_DESCRIPTOR_QUERY = "select entity_id from descriptors where descriptor ~* @searchTerm and entity_id = any(@entityIdList)";
         private const string FINAL_QUERY = @"select descriptors.descriptor_id, entities.entity_id, nums.num_9000, substances.inchi_key, descriptors.descriptor
@@ -87,8 +45,7 @@ namespace My.Functions
             (string bestSearchTerm, List<string> restOfTheSearchTerms) = BestSearchTerm(searchTerms);
 
             IList<int> search = FirstSearch(bestSearchTerm);
-            int i;
-            for (i = 0; i < restOfTheSearchTerms.Count && search.Count > 0; ++i)
+            for (int i = 0; i < restOfTheSearchTerms.Count && search.Count > 0; ++i)
             {
                 search = NextSearch(search, restOfTheSearchTerms[i]);
             }
@@ -102,11 +59,11 @@ namespace My.Functions
             string bestSearchTerm;
             List<string> searchTerms = new List<string>(searchTermArray);
             List<string> rest;
-            if ((bestSearchTerm = searchTerms.Find(st => Regex.Match(st, "9\\d{3}").Success)) != null)
+            if ((bestSearchTerm = searchTerms.Find(st => Regex.Match(st, NUM_9000_PATTERN).Success)) != null)
             {
                 rest = searchTerms.Where(st => st != bestSearchTerm).ToList();
                 return (bestSearchTerm, rest);
-            } else if ((bestSearchTerm = searchTerms.Find(st => Regex.Match(st, "[A-Z]{14}-[A-Z]{10}-[A-Z]").Success)) != null)
+            } else if ((bestSearchTerm = searchTerms.Find(st => Regex.Match(st, INCHI_KEY_PATTERN).Success)) != null)
             {
                 rest = searchTerms.Where(st => st != bestSearchTerm).ToList();
                 return (bestSearchTerm, rest);
@@ -122,22 +79,28 @@ namespace My.Functions
         private IList<int> FirstSearch(string searchTerm)
         {
             string query;
-            if (Regex.Match(searchTerm, "9\\d{3}").Success)
+            if (Regex.Match(searchTerm, NUM_9000_PATTERN).Success)
             {
-                query = NUM9000_QUERY;
-            } else if (Regex.Match(searchTerm, "[A-Z]{14}-[A-Z]{10}-[A-Z]").Success)
+                query = FIRST_NUM_9000_QUERY;
+            } else if (Regex.Match(searchTerm, INCHI_KEY_PATTERN).Success)
             {
-                query = INCHI_KEY_QUERY;
+                query = FIRST_INCHI_KEY_QUERY;
             } else
             {
-                query = DESCRIPTOR_QUERY;
+                query = FIRST_DESCRIPTOR_QUERY;
             }
 
             using var con = new NpgsqlConnection(url);
             con.Open();
 
             using var cmd = new NpgsqlCommand(query, con);
-            cmd.Parameters.AddWithValue("searchTerm", searchTerm);
+            if (query == FIRST_NUM_9000_QUERY)
+            {
+                cmd.Parameters.AddWithValue("searchTerm", Int32.Parse(searchTerm));
+            } else
+            {
+                cmd.Parameters.AddWithValue("searchTerm", searchTerm);
+            }
 
             var result = new List<int>();
             using NpgsqlDataReader rdr = cmd.ExecuteReader();
@@ -151,10 +114,10 @@ namespace My.Functions
         private IList<int> NextSearch(IList<int> entityIds, string searchTerm)
         {
             string query;
-            if (Regex.Match(searchTerm, "9\\d{3}").Success)
+            if (Regex.Match(searchTerm, NUM_9000_PATTERN).Success)
             {
-                query = LATER_NUM9000_QUERY;
-            } else if (Regex.Match(searchTerm, "[A-Z]{14}-[A-Z]{10}-[A-Z]").Success)
+                query = LATER_NUM_9000_QUERY;
+            } else if (Regex.Match(searchTerm, INCHI_KEY_PATTERN).Success)
             {
                 query = LATER_INCHI_KEY_QUERY;
             } else
@@ -166,7 +129,13 @@ namespace My.Functions
             con.Open();
 
             using var cmd = new NpgsqlCommand(query, con);
-            cmd.Parameters.AddWithValue("searchTerm", searchTerm);
+            if (query == LATER_NUM_9000_QUERY)
+            {
+                cmd.Parameters.AddWithValue("searchTerm", Int32.Parse(searchTerm));
+            } else
+            {
+                cmd.Parameters.AddWithValue("searchTerm", searchTerm);
+            }
             cmd.Parameters.Add("@entityIdList", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = entityIds;
 
             var result = new List<int>();
