@@ -11,7 +11,7 @@ namespace My.Models
 
         internal Entity() : this(0, 0, "", new List<string>()) {}
 
-        internal Entity(int entityId, int num9000, string inchiKey, List<string> descriptors)
+        public Entity(int entityId, int num9000, string inchiKey, List<string> descriptors)
         {
             this.entityId = entityId;
             this.num9000 = num9000;
@@ -33,11 +33,11 @@ namespace My.Models
 
         internal SearchResult() : this(new List<string>(), new List<Entity>()) {}
 
-        internal SearchResult(string [] searchTerms) : this(new List<string>(searchTerms), new List<Entity>()) {}
+        public SearchResult(string [] searchTerms) : this(new List<string>(searchTerms), new List<Entity>()) {}
 
-        internal SearchResult(IList<string> searchTerms) : this(searchTerms, new List<Entity>()) {}
+        public SearchResult(IList<string> searchTerms) : this(searchTerms, new List<Entity>()) {}
 
-        internal SearchResult(IList<string> searchTerms, IList<Entity> entities)
+        public SearchResult(IList<string> searchTerms, IList<Entity> entities)
         {
             this.searchTerms = searchTerms;
             this.entities = entities;

@@ -8,7 +8,7 @@ using My.Models;
 
 namespace My.DAO
 {
-    class OrgrefPostgreSQLDAO : OrgrefDAO
+    public class OrgrefPostgreSQLDAO : OrgrefDAO
     {
         private readonly string url;
         private const string NUM_9000_PATTERN = "9\\d{3}";

@@ -5,7 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
-    <PackageReference Include="Npgsql" Version="4.1.4" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
@@ -15,5 +14,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Orgref.Model\Orgref.Model.csproj" />
+    <ProjectReference Include="..\Orgref.DAO\Orgref.DAO.csproj" />
   </ItemGroup>
 </Project>
