@@ -1,16 +1,21 @@
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using My.DAO;
 using My.Models;
 
 namespace My.Functions
 {
+    class RequestBody
+    {
+        public string [] searchTerms { get; set; }
+    }
+
     public class QueryOrgref
     {
 
@@ -32,12 +37,12 @@ namespace My.Functions
             string [] searchTerms = request.Query["st"];
 
             string requestBody = await new StreamReader(request.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            searchTerms = searchTerms.Length > 0 ? searchTerms: data.searchTerms.ToObject<string[]>();
+            dynamic data = JsonSerializer.Deserialize<RequestBody>(requestBody);
+            searchTerms = searchTerms.Length > 0 ? searchTerms: data.searchTerms;
 
             string responseMessage = searchTerms.Length == 0
                 ? "This HTTP triggered function executed successfully. Pass one or more search terms (st=?) in the query or in the request body for more search hits."
-                : System.Text.Json.JsonSerializer.Serialize<SearchResult>(dao.GetSubstances(searchTerms));
+                : JsonSerializer.Serialize<SearchResult>(dao.GetSubstances(searchTerms));
             
             return new OkObjectResult(responseMessage);
         }
