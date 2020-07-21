@@ -10,12 +10,11 @@ namespace My.Functions
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            var serviceProvider = builder.Services.BuildServiceProvider();
-            var _configuration = serviceProvider.GetService<IConfiguration>();
-            var username = _configuration.GetValue<string>("username");
-            var password = _configuration.GetValue<string>("password");
-            var host = _configuration.GetValue<string>("host");
-            builder.Services.AddSingleton<OrgrefDAO>(s => new OrgrefPostgreSQLDAO(host: host, username: username, password: password));
+            builder.Services.AddOptions<DAOOptions>()
+                .Configure<IConfiguration>((settings, configurationBinder) => {
+                    configurationBinder.GetSection("DAOOptions").Bind(settings);
+                });
+            builder.Services.AddSingleton<OrgrefDAO, OrgrefPostgreSQLDAO>();
         }
     }
 }

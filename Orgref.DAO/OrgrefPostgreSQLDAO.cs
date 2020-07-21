@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using NpgsqlTypes;
 using My.Models;
@@ -11,6 +12,15 @@ namespace My.DAO
 {
     public class OrgrefPostgreSQLDAO : OrgrefDAO
     {
+        public OrgrefPostgreSQLDAO(IOptions<DAOOptions> options)
+        {
+            DAOOptions settings = options.Value;
+            var host = settings.host;
+            var username = settings.username;
+            var password = settings.password;
+            url = $"Host={host};Username={username};Password={password};Database=orgref";
+        }
+
         private readonly string url;
         private const string NUM_9000_PATTERN = "9\\d{3}";
         private const string INCHI_KEY_PATTERN = "[A-Z]{14}-[A-Z]{10}-[A-Z]";
@@ -33,11 +43,6 @@ namespace My.DAO
           entities.entity_id = any(@entityIdList)
         order by entities.entity_id, descriptors.descriptor_id
         ";
-
-        public OrgrefPostgreSQLDAO(string host, string username, string password)
-        {
-            url = $"Host={host};Username={username};Password={password};Database=orgref";
-        }
 
         public async Task<SearchResult> GetSubstances(string [] searchTerms)
         {
