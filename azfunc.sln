@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orgref.Model", "Orgref.Mode
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orgref.DAO", "Orgref.DAO\Orgref.DAO.csproj", "{822365A7-1AFF-4C15-B80A-78D52D5A6C58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "azfunc", "Orgref.Functions\azfunc.csproj", "{C66B6239-4CB1-4CCC-8CE5-4E7A0DDD95CA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orgref.Functions", "Orgref.Functions\Orgref.Functions.csproj", "{C66B6239-4CB1-4CCC-8CE5-4E7A0DDD95CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
