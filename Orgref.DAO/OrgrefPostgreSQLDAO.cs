@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Npgsql;
 using NpgsqlTypes;
 using My.Models;
@@ -38,21 +39,21 @@ namespace My.DAO
             url = $"Host={host};Username={username};Password={password};Database=orgref";
         }
 
-        public SearchResult GetSubstances(string [] searchTerms)
+        public async Task<SearchResult> GetSubstances(string [] searchTerms)
         {
             SearchResult result = new SearchResult(searchTerms);
 
             (string bestSearchTerm, List<string> restOfTheSearchTerms) = BestSearchTerm(searchTerms);
 
-            IList<int> search = FirstSearch(bestSearchTerm);
+            IList<int> search = await FirstSearch(bestSearchTerm);
             for (int i = 0; i < restOfTheSearchTerms.Count && search.Count > 0; ++i)
             {
-                search = NextSearch(search, restOfTheSearchTerms[i]);
+                search = await NextSearch(search, restOfTheSearchTerms[i]);
             }
 
             if (search.Count > 0)
             {
-                CompleteSearch(result, search);
+                await CompleteSearch(result, search);
             }
             return result;
         }
@@ -79,7 +80,7 @@ namespace My.DAO
             }
         }
 
-        private IList<int> FirstSearch(string searchTerm)
+        private async Task<IList<int>> FirstSearch(string searchTerm)
         {
             string query;
             if (Regex.Match(searchTerm, NUM_9000_PATTERN).Success)
@@ -93,28 +94,30 @@ namespace My.DAO
                 query = FIRST_DESCRIPTOR_QUERY;
             }
 
-            using var con = new NpgsqlConnection(url);
-            con.Open();
+            return await Task.Run(() => {
+                using var con = new NpgsqlConnection(url);
+                con.Open();
 
-            using var cmd = new NpgsqlCommand(query, con);
-            if (query == FIRST_NUM_9000_QUERY)
-            {
-                cmd.Parameters.AddWithValue("searchTerm", Int32.Parse(searchTerm));
-            } else
-            {
-                cmd.Parameters.AddWithValue("searchTerm", searchTerm);
-            }
+                using var cmd = new NpgsqlCommand(query, con);
+                if (query == FIRST_NUM_9000_QUERY)
+                {
+                    cmd.Parameters.AddWithValue("searchTerm", Int32.Parse(searchTerm));
+                } else
+                {
+                    cmd.Parameters.AddWithValue("searchTerm", searchTerm);
+                }
 
-            var result = new List<int>();
-            using NpgsqlDataReader rdr = cmd.ExecuteReader();
-            while (rdr.Read())
-            {
-                result.Add(rdr.GetInt32(0));
-            }
-            return result;
+                var result = new List<int>();
+                using NpgsqlDataReader rdr = cmd.ExecuteReader();
+                while (rdr.Read())
+                {
+                    result.Add(rdr.GetInt32(0));
+                }
+                return result;
+            });
         }
 
-        private IList<int> NextSearch(IList<int> entityIds, string searchTerm)
+        private async Task<IList<int>> NextSearch(IList<int> entityIds, string searchTerm)
         {
             string query;
             if (Regex.Match(searchTerm, NUM_9000_PATTERN).Success)
@@ -128,84 +131,90 @@ namespace My.DAO
                 query = LATER_DESCRIPTOR_QUERY;
             }
 
-            using var con = new NpgsqlConnection(url);
-            con.Open();
+            return await Task.Run(() => {
+                using var con = new NpgsqlConnection(url);
+                con.Open();
 
-            using var cmd = new NpgsqlCommand(query, con);
-            if (query == LATER_NUM_9000_QUERY)
-            {
-                cmd.Parameters.AddWithValue("searchTerm", Int32.Parse(searchTerm));
-            } else
-            {
-                cmd.Parameters.AddWithValue("searchTerm", searchTerm);
-            }
-            cmd.Parameters.Add("@entityIdList", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = entityIds;
+                using var cmd = new NpgsqlCommand(query, con);
+                if (query == LATER_NUM_9000_QUERY)
+                {
+                    cmd.Parameters.AddWithValue("searchTerm", Int32.Parse(searchTerm));
+                } else
+                {
+                    cmd.Parameters.AddWithValue("searchTerm", searchTerm);
+                }
+                cmd.Parameters.Add("@entityIdList", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = entityIds;
 
-            var result = new List<int>();
-            using NpgsqlDataReader rdr = cmd.ExecuteReader();
-            while (rdr.Read())
-            {
-                result.Add(rdr.GetInt32(0));
-            }
-            return result;
+                var result = new List<int>();
+                using NpgsqlDataReader rdr = cmd.ExecuteReader();
+                while (rdr.Read())
+                {
+                    result.Add(rdr.GetInt32(0));
+                }
+                return result;
+            });
         }
 
-        private void CompleteSearch(SearchResult result, IList<int> entityIds)
+        private async Task CompleteSearch(SearchResult result, IList<int> entityIds)
         {
-            using var con = new NpgsqlConnection(url);
-            con.Open();
+            await Task.Run(() => {
+                using var con = new NpgsqlConnection(url);
+                con.Open();
 
-            using var cmd = new NpgsqlCommand(FINAL_QUERY, con);
-            cmd.Parameters.Add("@entityIdList", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = entityIds;
+                using var cmd = new NpgsqlCommand(FINAL_QUERY, con);
+                cmd.Parameters.Add("@entityIdList", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = entityIds;
 
-            using NpgsqlDataReader rdr = cmd.ExecuteReader();
-            int prevEntityId = -1;
-            int entityId = -2;
-            int num9000 = 0;
-            string inchiKey = "";
-            List<string> descriptorList = new List<string>();
-            while (rdr.Read())
-            {
-                entityId = rdr.GetInt32(1);
-                if (entityId != prevEntityId && prevEntityId != -1)
+                using NpgsqlDataReader rdr = cmd.ExecuteReader();
+                int prevEntityId = -1;
+                int entityId = -2;
+                int num9000 = 0;
+                string inchiKey = "";
+                List<string> descriptorList = new List<string>();
+                while (rdr.Read())
                 {
-                    Entity e = new Entity(prevEntityId, num9000, inchiKey, descriptorList);
+                    entityId = rdr.GetInt32(1);
+                    if (entityId != prevEntityId && prevEntityId != -1)
+                    {
+                        Entity e = new Entity(prevEntityId, num9000, inchiKey, descriptorList);
+                        result.AddEntity(e);
+                        descriptorList = new List<string>();
+                    }
+                    prevEntityId = entityId;
+                    num9000 = rdr.IsDBNull(2) ? 0 : rdr.GetInt32(2);
+                    inchiKey = rdr.IsDBNull(3) ? "" : rdr.GetString(3);
+                    if (!rdr.IsDBNull(4))
+                    {
+                        descriptorList.Add(rdr.GetString(4));
+                    }
+                }
+                if (entityId != -1)
+                {
+                    Entity e = new Entity(entityId, num9000, inchiKey, descriptorList);
                     result.AddEntity(e);
-                    descriptorList = new List<string>();
                 }
-                prevEntityId = entityId;
-                num9000 = rdr.IsDBNull(2) ? 0 : rdr.GetInt32(2);
-                inchiKey = rdr.IsDBNull(3) ? "" : rdr.GetString(3);
-                if (!rdr.IsDBNull(4))
-                {
-                    descriptorList.Add(rdr.GetString(4));
-                }
-            }
-            if (entityId != -1)
-            {
-                Entity e = new Entity(entityId, num9000, inchiKey, descriptorList);
-                result.AddEntity(e);
-            }
+            });
         }
 
-        public string GetStructure(string inchiKey)
+        public Task<string> GetStructure(string inchiKey)
         {
-            using var con = new NpgsqlConnection(url);
-            con.Open();
+            return Task.Run(() => {
+                using var con = new NpgsqlConnection(url);
+                con.Open();
 
-            var sql = "select inchi from substances where inchi_key=@ik";
-            using var cmd = new NpgsqlCommand(sql, con);
+                var sql = "select inchi from substances where inchi_key=@ik";
+                using var cmd = new NpgsqlCommand(sql, con);
 
-            cmd.Parameters.AddWithValue("ik", inchiKey);
+                cmd.Parameters.AddWithValue("ik", inchiKey);
 
-            using NpgsqlDataReader rdr = cmd.ExecuteReader();
-            if (rdr.Read())
-            {
-                return rdr.GetString(0);
-            } else
-            {
-                return null;
-            }
+                using NpgsqlDataReader rdr = cmd.ExecuteReader();
+                if (rdr.Read())
+                {
+                    return rdr.GetString(0);
+                } else
+                {
+                    return null;
+                }
+            });
         }
     }
 }

@@ -1,11 +1,12 @@
+using System.Threading.Tasks;
 using My.Models;
 
 namespace My.DAO
 {
     public interface OrgrefDAO
     {
-        SearchResult GetSubstances(string [] searchTerms);
+        Task<SearchResult> GetSubstances(string [] searchTerms);
 
-        string GetStructure(string inchiKey);
+        Task<string> GetStructure(string inchiKey);
     }
 }

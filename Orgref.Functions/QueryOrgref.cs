@@ -45,7 +45,7 @@ namespace My.Functions
 
             string responseMessage = searchTerms.Length == 0
                 ? "This HTTP triggered function executed successfully. Pass one or more search terms (st=?) in the query or in the request body for more search hits."
-                : JsonSerializer.Serialize<SearchResult>(dao.GetSubstances(searchTerms));
+                : JsonSerializer.Serialize<SearchResult>(await dao.GetSubstances(searchTerms));
             
             return new OkObjectResult(responseMessage);
         }
@@ -61,7 +61,7 @@ namespace My.Functions
 
             string responseMessage = string.IsNullOrEmpty(inchiKey)
                 ? "This HTTP triggered function executed successfully. Pass an InChIKey in the HTTP route to query the Orgref database."
-                : dao.GetStructure(inchiKey) ?? "No match found!";
+                : await dao.GetStructure(inchiKey) ?? "No match found!";
 
             return new OkObjectResult(responseMessage);            
         }
