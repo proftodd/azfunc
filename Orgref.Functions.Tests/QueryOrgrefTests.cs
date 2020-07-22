@@ -10,7 +10,6 @@ using Microsoft.Extensions.Primitives;
 using Moq;
 using NUnit.Framework;
 using My.DAO;
-using My.Functions;
 using My.Models;
 
 namespace My.Functions
@@ -20,13 +19,15 @@ namespace My.Functions
     {
         Mock<OrgrefDAO> mockDao;
         QueryOrgref sut;
-        SearchResult sr = new SearchResult();
+        private readonly SearchResult sr = new SearchResult();
+        private readonly string inchi = "an inchi";
 
         [SetUp]
         public void Init()
         {
             mockDao = new Mock<OrgrefDAO>();
             mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).ReturnsAsync(sr);
+            mockDao.Setup(md => md.GetStructure(It.IsAny<string>())).ReturnsAsync(inchi);
             sut = new QueryOrgref(mockDao.Object);
         }
 
@@ -105,7 +106,7 @@ namespace My.Functions
             var okResult = (await sut.QueryStructure(null, inchiKey, new Mock<ILogger>().Object)) as OkObjectResult;
             string response = okResult.Value as string;
 
-            Assert.False(string.IsNullOrEmpty(response));
+            Assert.AreEqual(inchi, response);
             mockDao.Verify(md => md.GetStructure(inchiKey), Times.Once);
         }
     }
