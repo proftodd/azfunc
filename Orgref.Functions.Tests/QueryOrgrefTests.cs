@@ -97,5 +97,16 @@ namespace My.Functions
             Assert.False(string.IsNullOrEmpty(response));
             mockDao.Verify(md => md.GetStructure(It.IsAny<string>()), Times.Never);
         }
+
+        [Test]
+        public async Task query_structure_returns_string_if_structure_key_is_provided()
+        {
+            var inchiKey = "an inchi key";
+            var okResult = (await sut.QueryStructure(null, inchiKey, new Mock<ILogger>().Object)) as OkObjectResult;
+            string response = okResult.Value as string;
+
+            Assert.False(string.IsNullOrEmpty(response));
+            mockDao.Verify(md => md.GetStructure(inchiKey), Times.Once);
+        }
     }
 }
