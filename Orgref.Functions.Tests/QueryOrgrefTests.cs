@@ -25,7 +25,7 @@ namespace My.Functions
         }
 
         [Test]
-        public async Task it_returns_string_if_no_search_terms_are_provided()
+        public async Task query_substances_returns_string_if_no_search_terms_are_provided()
         {
             var context = new DefaultHttpContext();
             var request = context.Request;
@@ -37,6 +37,16 @@ namespace My.Functions
 
             Assert.False(string.IsNullOrEmpty(response));
             mockDao.Verify(md => md.GetSubstances(It.IsAny<string []>()), Times.Never);
+        }
+
+        [Test]
+        public async Task query_structure_returns_string_if_no_structure_key_is_provided()
+        {
+            var okResult = (await sut.QueryStructure(null, null, new Mock<ILogger>().Object)) as OkObjectResult;
+            string response = okResult.Value as string;
+
+            Assert.False(string.IsNullOrEmpty(response));
+            mockDao.Verify(md => md.GetStructure(It.IsAny<string>()), Times.Never);
         }
     }
 }
