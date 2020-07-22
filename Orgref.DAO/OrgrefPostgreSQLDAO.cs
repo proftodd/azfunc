@@ -170,17 +170,17 @@ namespace My.DAO
                 cmd.Parameters.Add("@entityIdList", NpgsqlDbType.Array | NpgsqlDbType.Integer).Value = entityIds;
 
                 using NpgsqlDataReader rdr = cmd.ExecuteReader();
-                int prevEntityId = -1;
-                int entityId = -2;
+                int? prevEntityId = null;
+                int? entityId = null;
                 int num9000 = 0;
                 string inchiKey = "";
                 List<string> descriptorList = new List<string>();
                 while (rdr.Read())
                 {
                     entityId = rdr.GetInt32(1);
-                    if (entityId != prevEntityId && prevEntityId != -1)
+                    if (entityId != prevEntityId && prevEntityId.HasValue)
                     {
-                        Entity e = new Entity(prevEntityId, num9000, inchiKey, descriptorList);
+                        Entity e = new Entity(prevEntityId.Value, num9000, inchiKey, descriptorList);
                         result.AddEntity(e);
                         descriptorList = new List<string>();
                     }
@@ -192,9 +192,9 @@ namespace My.DAO
                         descriptorList.Add(rdr.GetString(4));
                     }
                 }
-                if (entityId != -1)
+                if (entityId.HasValue)
                 {
-                    Entity e = new Entity(entityId, num9000, inchiKey, descriptorList);
+                    Entity e = new Entity(entityId.Value, num9000, inchiKey, descriptorList);
                     result.AddEntity(e);
                 }
             });
