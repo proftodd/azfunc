@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Web.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.AspNetCore.Mvc;
@@ -90,6 +92,23 @@ namespace My.Functions
         }
 
         [Test]
+        public async Task query_substances_returns_error_to_caller_on_exception()
+        {
+            mockDao = new Mock<OrgrefDAO>();
+            mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).ThrowsAsync(new Exception());
+            sut = new QueryOrgref(mockDao.Object);
+
+            string [] searchTerms = new string [] {"hobt", "h2o"};
+            var request = new DefaultHttpContext().Request;
+            request.Query = new QueryCollection(new Dictionary<string, StringValues> {
+                {"st", new StringValues(searchTerms)}
+            } );
+
+            var errorResult = (await sut.QuerySubstance(request, new Mock<ILogger>().Object)) as ExceptionResult;
+            Assert.NotNull(errorResult);
+        }
+
+        [Test]
         public async Task query_structure_returns_string_if_no_structure_key_is_provided()
         {
             var okResult = (await sut.QueryStructure(null, null, new Mock<ILogger>().Object)) as OkObjectResult;
@@ -108,6 +127,17 @@ namespace My.Functions
 
             Assert.AreEqual(inchi, response);
             mockDao.Verify(md => md.GetStructure(inchiKey), Times.Once);
+        }
+
+        [Test]
+        public async Task query_structure_returns_error_to_caller_on_exception()
+        {
+            mockDao = new Mock<OrgrefDAO>();
+            mockDao.Setup(md => md.GetStructure(It.IsAny<string>())).ThrowsAsync(new Exception());
+            sut = new QueryOrgref(mockDao.Object);
+
+            var errorResult = (await sut.QueryStructure(null, "error", new Mock<ILogger>().Object)) as ExceptionResult;
+            Assert.NotNull(errorResult);
         }
     }
 }

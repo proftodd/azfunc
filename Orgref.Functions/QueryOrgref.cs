@@ -1,6 +1,8 @@
+using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Web.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -43,11 +45,24 @@ namespace My.Functions
                 searchTerms = searchTerms.Length > 0 ? searchTerms: data.searchTerms;
             }
 
-            string responseMessage = searchTerms.Length == 0
-                ? "This HTTP triggered function executed successfully. Pass one or more search terms (st=?) in the query or in the request body for more search hits."
-                : JsonSerializer.Serialize<SearchResult>(await dao.GetSubstances(searchTerms));
+            IActionResult result;
+            if (searchTerms.Length == 0)
+            {
+                string responseMessage = "This HTTP triggered function executed successfully. Pass one or more search terms (st=?) in the query or in the request body for more search hits.";
+                result = new OkObjectResult(responseMessage);
+            } else
+            {
+                try {
+                    var searchResult = await dao.GetSubstances(searchTerms);
+                    string responseMessage = JsonSerializer.Serialize<SearchResult>(searchResult);
+                    result = new OkObjectResult(responseMessage);
+                } catch (Exception e)
+                {
+                    result = new ExceptionResult(e, false);
+                }
+            }
             
-            return new OkObjectResult(responseMessage);
+            return result;
         }
 
         [FunctionName("QueryStructure")]
@@ -59,11 +74,22 @@ namespace My.Functions
         {
             log.LogInformation("C# HTTP trigger function processed a structure request.");
 
-            string responseMessage = string.IsNullOrEmpty(inchiKey)
-                ? "This HTTP triggered function executed successfully. Pass an InChIKey in the HTTP route to query the Orgref database."
-                : await dao.GetStructure(inchiKey) ?? "No match found!";
-
-            return new OkObjectResult(responseMessage);            
+            IActionResult result;
+            if (string.IsNullOrEmpty(inchiKey))
+            {
+                var responseMessage = "This HTTP triggered function executed successfully. Pass an InChIKey in the HTTP route to query the Orgref database.";
+                result = new OkObjectResult(responseMessage);
+            } else
+            {
+                try {
+                    var responseMessage = await dao.GetStructure(inchiKey) ?? "No match found!";
+                    result = new OkObjectResult(responseMessage);
+                } catch (Exception e)
+                {
+                    result = new ExceptionResult(e, false);
+                }
+            }
+            return result;
         }
     }
 }
