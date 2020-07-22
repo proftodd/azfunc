@@ -31,7 +31,7 @@ namespace My.Models
         public IList<string> searchTerms { get; }
         public IList<Entity> entities { get; }
 
-        internal SearchResult() : this(new List<string>(), new List<Entity>()) {}
+        public SearchResult() : this(new List<string>(), new List<Entity>()) {}
 
         public SearchResult(string [] searchTerms) : this(new List<string>(searchTerms), new List<Entity>()) {}
 

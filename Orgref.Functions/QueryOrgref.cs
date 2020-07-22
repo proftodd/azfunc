@@ -11,7 +11,7 @@ using My.Models;
 
 namespace My.Functions
 {
-    class RequestBody
+    public class RequestBody
     {
         public string [] searchTerms { get; set; }
     }

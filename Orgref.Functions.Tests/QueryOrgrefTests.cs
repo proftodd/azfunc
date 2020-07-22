@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
@@ -8,6 +10,8 @@ using Microsoft.Extensions.Primitives;
 using Moq;
 using NUnit.Framework;
 using My.DAO;
+using My.Functions;
+using My.Models;
 
 namespace My.Functions
 {
@@ -16,11 +20,13 @@ namespace My.Functions
     {
         Mock<OrgrefDAO> mockDao;
         QueryOrgref sut;
+        SearchResult sr = new SearchResult();
 
         [SetUp]
         public void Init()
         {
             mockDao = new Mock<OrgrefDAO>();
+            mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).ReturnsAsync(sr);
             sut = new QueryOrgref(mockDao.Object);
         }
 
@@ -37,6 +43,49 @@ namespace My.Functions
 
             Assert.False(string.IsNullOrEmpty(response));
             mockDao.Verify(md => md.GetSubstances(It.IsAny<string []>()), Times.Never);
+        }
+
+        [Test]
+        public async Task query_substances_returns_string_if_search_terms_given_as_query_parameters()
+        {
+            string [] searchTerms = new string [] {"hobt", "h2o"};
+            var request = new DefaultHttpContext().Request;
+            request.Query = new QueryCollection(new Dictionary<string, StringValues> {
+                {"st", new StringValues(searchTerms)}
+            } );
+
+            var okResult = (await sut.QuerySubstance(request, new Mock<ILogger>().Object)) as OkObjectResult;
+            string response = okResult.Value as string;
+
+            Assert.False(string.IsNullOrEmpty(response));
+            var observedSearchResult = JsonSerializer.Deserialize<SearchResult>(response);
+            Assert.IsInstanceOf<SearchResult>(observedSearchResult);
+            mockDao.Verify(md => md.GetSubstances(searchTerms), Times.Once);
+        }
+
+        [Test]
+        public async Task query_substances_returns_string_if_search_terms_given_in_body()
+        {
+            var searchTerms = new string [] {"water", "h2o"};
+            var ms = new MemoryStream();
+            var sw = new StreamWriter(ms);
+            var data = new RequestBody {
+                searchTerms = searchTerms
+            };
+            var json = JsonSerializer.Serialize(data);
+            sw.Write(json);
+            sw.Flush();
+            ms.Position = 0;
+            var request = new DefaultHttpContext().Request;
+            request.Body = ms;
+
+            var okResult = (await sut.QuerySubstance(request, new Mock<ILogger>().Object)) as OkObjectResult;
+            string response = okResult.Value as string;
+
+            Assert.False(string.IsNullOrEmpty(response));
+            var observedSearchResult = JsonSerializer.Deserialize<SearchResult>(response);
+            Assert.IsInstanceOf<SearchResult>(observedSearchResult);
+            mockDao.Verify(md => md.GetSubstances(searchTerms), Times.Once);
         }
 
         [Test]
