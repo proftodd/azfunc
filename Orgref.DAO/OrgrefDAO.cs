@@ -5,9 +5,10 @@ namespace My.DAO
 {
     public class DAOOptions
     {
-        public string host { get; set; }
-        public string username { get; set; }
-        public string password { get; set; }
+        public string Host { get; set; }
+        public string Database { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 
     public interface OrgrefDAO

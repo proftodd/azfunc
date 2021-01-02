@@ -1,29 +1,48 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace My.Models
 {
     public class Entity
     {
-        public int entityId { get; }
-        public int num9000 { get; }
-        public string inchiKey { get; }
-        public IList<string> descriptors { get; }
+        public int Id { get; set; }
 
-        internal Entity() : this(0, 0, "", new List<string>()) {}
+        public Substance Sub { get; set; }
 
-        public Entity(int entityId, int num9000, string inchiKey, List<string> descriptors)
-        {
-            this.entityId = entityId;
-            this.num9000 = num9000;
-            this.inchiKey = inchiKey;
-            this.descriptors = descriptors;
-        }
+        public Num9000 Num { get; set; }
+
+        public IList<Descriptor> Descriptors { get; set; }
 
         override public string ToString()
         {
-            var descriptorString = string.Join(", ", descriptors);
-            return $"{(num9000 == 0 ? "" : num9000.ToString()): %4s} {inchiKey: %27s} {descriptorString}";
+            var descriptorString = string.Join(", ", Descriptors.Select(d => d.Desc));
+            return $"{(Num.Num == 0 ? "" : Num.Num.ToString()): %4s} {Sub.InchiKey: %27s} {descriptorString}";
         }
+    }
+
+    public class Substance
+    {
+        public Entity Entity { get; set; }
+
+        public string InchiKey { get; set; }
+
+        public string Inchi { get; set; }
+    }
+
+    public class Num9000
+    {
+        public int Num { get; set; }
+
+        public Entity Entity { get; set; }
+    }
+
+    public class Descriptor
+    {
+        public int Id { get; set; }
+
+        public Entity Entity { get; set; }
+
+        public string Desc { get; set; }
     }
 
     public class SearchResult
@@ -33,19 +52,10 @@ namespace My.Models
 
         public SearchResult() : this(new List<string>(), new List<Entity>()) {}
 
-        public SearchResult(string [] searchTerms) : this(new List<string>(searchTerms), new List<Entity>()) {}
-
-        public SearchResult(IList<string> searchTerms) : this(searchTerms, new List<Entity>()) {}
-
         public SearchResult(IList<string> searchTerms, IList<Entity> entities)
         {
             this.searchTerms = searchTerms;
             this.entities = entities;
-        }
-
-        public void AddEntity(Entity entity)
-        {
-            entities.Add(entity);
         }
     }
 }

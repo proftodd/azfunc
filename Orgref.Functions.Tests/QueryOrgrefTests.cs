@@ -21,14 +21,13 @@ namespace My.Functions
     {
         Mock<OrgrefDAO> mockDao;
         QueryOrgref sut;
-        private readonly SearchResult sr = new SearchResult();
         private readonly string inchi = "an inchi";
 
         [SetUp]
         public void Init()
         {
             mockDao = new Mock<OrgrefDAO>();
-            mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).ReturnsAsync(sr);
+            mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).ReturnsAsync(new SearchResult(new string[] { }, new Entity[] { }));
             mockDao.Setup(md => md.GetStructure(It.IsAny<string>())).ReturnsAsync(inchi);
             sut = new QueryOrgref(mockDao.Object);
         }
@@ -95,7 +94,7 @@ namespace My.Functions
         public async Task query_substances_returns_error_to_caller_on_exception()
         {
             mockDao = new Mock<OrgrefDAO>();
-            mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).ThrowsAsync(new Exception());
+            mockDao.Setup(md => md.GetSubstances(It.IsAny<string []>())).Throws(new Exception());
             sut = new QueryOrgref(mockDao.Object);
 
             string [] searchTerms = new string [] {"hobt", "h2o"};
@@ -133,7 +132,7 @@ namespace My.Functions
         public async Task query_structure_returns_error_to_caller_on_exception()
         {
             mockDao = new Mock<OrgrefDAO>();
-            mockDao.Setup(md => md.GetStructure(It.IsAny<string>())).ThrowsAsync(new Exception());
+            mockDao.Setup(md => md.GetStructure(It.IsAny<string>())).Throws(new Exception());
             sut = new QueryOrgref(mockDao.Object);
 
             var errorResult = (await sut.QueryStructure(null, "error", new Mock<ILogger>().Object)) as ExceptionResult;

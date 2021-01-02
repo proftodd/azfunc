@@ -4,8 +4,9 @@
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
-    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.10" />
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.7" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
@@ -17,7 +18,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Orgref.Model\Orgref.Model.csproj" />
     <ProjectReference Include="..\Orgref.DAO\Orgref.DAO.csproj" />
+    <ProjectReference Include="..\Orgref.Model\Orgref.Model.csproj" />
+    <ProjectReference Include="..\Orgref.PostgreSqlDao\Orgref.PostgreSqlDao.csproj" />
   </ItemGroup>
 </Project>
