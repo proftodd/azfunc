@@ -26,14 +26,13 @@ namespace Orgref.PostgreSqlDao
         public async Task<SearchResult> GetSubstances(string [] searchTerms)
         {
             (string bestSearchTerm, List<string> restOfTheSearchTerms) = BestSearchTerm(searchTerms);
-
-            IQueryable<Entity> search = FirstSearch(bestSearchTerm);
-            for (int i = 0; i < restOfTheSearchTerms.Count && search.Count() > 0; ++i)
+            IQueryable<Entity> candidates = FirstSearch(bestSearchTerm);
+            for (int i = 0; i < restOfTheSearchTerms.Count; ++i)
             {
-                search = NextSearch(search, restOfTheSearchTerms[i]);
+                candidates = NextSearch(candidates, restOfTheSearchTerms[i]);
             }
 
-            var entityList = await search.ToListAsync();
+            var entityList = await candidates.ToListAsync();
             return new SearchResult(searchTerms, entityList);
         }
 
@@ -73,18 +72,18 @@ namespace Orgref.PostgreSqlDao
             }
         }
 
-        private IQueryable<Entity> NextSearch(IQueryable<Entity> entityIds, string searchTerm)
+        private IQueryable<Entity> NextSearch(IQueryable<Entity> candidates, string searchTerm)
         {
             if (NUM_9000_PATTERN.Match(searchTerm).Success)
             {
-                return entityIds.Where(e => e.Num.Num == int.Parse(searchTerm));
+                return candidates.Where(e => e.Num.Num == int.Parse(searchTerm));
             } else if (INCHI_KEY_PATTERN.Match(searchTerm).Success)
             {
-                return entityIds.Where(e => e.Sub.InchiKey == searchTerm);
+                return candidates.Where(e => e.Sub.InchiKey == searchTerm);
             } else
             {
-                var regex = new Regex(searchTerm);
-                return entityIds.Where(e => e.Descriptors.Any(d => regex.Match(d.Desc).Success));
+                var regex = new Regex(searchTerm, RegexOptions.IgnoreCase);
+                return candidates.Where(e => e.Descriptors.Any(d => regex.Match(d.Desc).Success));
             }
         }
 
