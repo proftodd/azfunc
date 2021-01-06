@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace My.Models
 {
@@ -7,22 +8,27 @@ namespace My.Models
     {
         public int Id { get; set; }
 
-        public Substance Sub { get; set; }
+        public virtual Substance Sub { get; set; }
 
-        public Num9000 Num { get; set; }
+        public virtual Num9000 Num { get; set; }
 
-        public IList<Descriptor> Descriptors { get; set; }
+        public virtual IList<Descriptor> Descriptors { get; set; }
 
-        override public string ToString()
+        public override string ToString()
         {
-            var descriptorString = string.Join(", ", Descriptors.Select(d => d.Desc));
-            return $"{(Num.Num == 0 ? "" : Num.Num.ToString()): %4s} {Sub.InchiKey: %27s} {descriptorString}";
+            return new StringBuilder()
+                .Append(Num == null || Num.Num == 0 ? new string(' ', 5) : $"{Num.Num,4:#} ")
+                .Append(Sub == null ? new string(' ', 28) : $"{Sub.InchiKey} ")
+                .Append(string.Join(',', Descriptors.Select(d => d.Desc)))
+                .ToString();
         }
     }
 
     public class Substance
     {
-        public Entity Entity { get; set; }
+        public int EntityId { get; set; }
+
+        public virtual Entity Entity { get; set; }
 
         public string InchiKey { get; set; }
 
@@ -33,14 +39,18 @@ namespace My.Models
     {
         public int Num { get; set; }
 
-        public Entity Entity { get; set; }
+        public int EntityId { get; set; }
+
+        public virtual Entity Entity { get; set; }
     }
 
     public class Descriptor
     {
-        public int Id { get; set; }
+        public int DescriptorId { get; set; }
 
-        public Entity Entity { get; set; }
+        public int EntityId { get; set; }
+
+        public virtual Entity Entity { get; set; }
 
         public string Desc { get; set; }
     }

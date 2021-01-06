@@ -21,26 +21,39 @@ namespace Orgref.PostgreSqlDao
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
-            optionsBuilder.UseNpgsql($"Host={host};Database={database};Username={username};Password={password}");
+            optionsBuilder
+                .UseNpgsql($"Host={host};Database={database};Username={username};Password={password}")
+                .UseLazyLoadingProxies();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Entity>(entity => {
-                entity.ToTable("entities");
-                entity.Property(e => e.Id).HasColumnName("entity_id");
-                entity.HasOne<Substance>(e => e.Sub).WithOne(e => e.Entity);
-                entity.HasOne<Num9000>(e => e.Num).WithOne(e => e.Entity);
-                entity.HasMany<Descriptor>(e => e.Descriptors).WithOne(e => e.Entity);
-            });
-            modelBuilder.Entity<Substance>().ToTable("substances");
             modelBuilder.Entity<Num9000>(entity => {
                 entity.ToTable("nums");
-                entity.Property(e => e.Num).HasColumnName("num_9000");
+                entity.HasKey(n => n.Num);
+                entity.Property(n => n.Num).HasColumnName("num_9000");
+                entity.Property(n => n.EntityId).HasColumnName("entity_id");
+                entity.HasOne<Entity>(n => n.Entity).WithOne(e => e.Num).HasForeignKey<Num9000>(n => n.EntityId);
+            });
+            modelBuilder.Entity<Substance>(entity => {
+                entity.ToTable("substances");
+                entity.HasKey(e => e.EntityId);
+                entity.Property(e => e.EntityId).HasColumnName("entity_id").IsRequired();
+                entity.Property(e => e.Inchi).HasColumnName("inchi").IsRequired();
+                entity.Property(e => e.InchiKey).HasColumnName("inchi_key").IsRequired();
+                entity.HasOne<Entity>(s => s.Entity).WithOne(e => e.Sub).HasForeignKey<Substance>(s => s.EntityId);
             });
             modelBuilder.Entity<Descriptor>(entity => {
                 entity.ToTable("descriptors");
-                entity.Property(e => e.Id).HasColumnName("descriptor_id");
+                entity.HasKey(e => e.DescriptorId);
+                entity.Property(e => e.DescriptorId).HasColumnName("descriptor_id").IsRequired();
+                entity.Property(e => e.EntityId).HasColumnName("entity_id").IsRequired();
                 entity.Property(e => e.Desc).HasColumnName("descriptor");
+                entity.HasOne<Entity>(d => d.Entity).WithMany(e => e.Descriptors).HasForeignKey(d => d.EntityId);
+            });
+            modelBuilder.Entity<Entity>(entity => {
+                entity.ToTable("entities");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("entity_id");
             });
         }
 

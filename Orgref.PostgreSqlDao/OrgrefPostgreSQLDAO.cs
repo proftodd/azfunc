@@ -67,8 +67,9 @@ namespace Orgref.PostgreSqlDao
                 return ctx.Entities.Where(e => e.Sub.InchiKey == searchTerm);
             } else
             {
-                var regex = new Regex(searchTerm);
-                return ctx.Entities.Where(e => e.Descriptors.Any(d => regex.Match(d.Desc).Success));
+                // var regex = new Regex(searchTerm);
+                // return ctx.Entities.Where(e => e.Descriptors.Any(d => regex.Match(d.Desc).Success));
+                return ctx.Entities.Where(e => e.Descriptors.Any(d => d.Desc == searchTerm));
             }
         }
 
@@ -82,8 +83,9 @@ namespace Orgref.PostgreSqlDao
                 return candidates.Where(e => e.Sub.InchiKey == searchTerm);
             } else
             {
-                var regex = new Regex(searchTerm, RegexOptions.IgnoreCase);
-                return candidates.Where(e => e.Descriptors.Any(d => regex.Match(d.Desc).Success));
+                // var regex = new Regex(searchTerm);
+                // return ctx.Entities.Where(e => e.Descriptors.Any(d => regex.Match(d.Desc).Success));
+                return ctx.Entities.Where(e => e.Descriptors.Any(d => d.Desc == searchTerm));
             }
         }
 
