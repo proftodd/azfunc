@@ -22,10 +22,17 @@ namespace My.Functions
     {
 
         private readonly OrgrefDAO dao;
+        private readonly JsonSerializerOptions options;
 
         public QueryOrgref(OrgrefDAO dao)
         {
             this.dao = dao;
+            options = new JsonSerializerOptions()
+            {
+                MaxDepth = 0,
+                IgnoreNullValues = true,
+                IgnoreReadOnlyProperties = true
+            };
         }
 
         [FunctionName("QuerySubstance")]
@@ -54,10 +61,11 @@ namespace My.Functions
             {
                 try {
                     var searchResult = await dao.GetSubstances(searchTerms);
-                    string responseMessage = JsonSerializer.Serialize<SearchResult>(searchResult);
+                    string responseMessage = JsonSerializer.Serialize<SearchResult>(searchResult, options);
                     result = new OkObjectResult(responseMessage);
                 } catch (Exception e)
                 {
+                    log.LogError($"an exception was thrown: {e}");
                     result = new ExceptionResult(e, false);
                 }
             }
@@ -86,6 +94,7 @@ namespace My.Functions
                     result = new OkObjectResult(responseMessage);
                 } catch (Exception e)
                 {
+                    log.LogError($"an exception was thrown: {e}");
                     result = new ExceptionResult(e, false);
                 }
             }

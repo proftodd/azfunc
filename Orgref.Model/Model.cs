@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace My.Models
 {
@@ -26,8 +27,10 @@ namespace My.Models
 
     public class Substance
     {
+        [JsonIgnore]
         public int EntityId { get; set; }
 
+        [JsonIgnore]
         public virtual Entity Entity { get; set; }
 
         public string InchiKey { get; set; }
@@ -39,8 +42,10 @@ namespace My.Models
     {
         public int Num { get; set; }
 
+        [JsonIgnore]
         public int EntityId { get; set; }
 
+        [JsonIgnore]
         public virtual Entity Entity { get; set; }
     }
 
@@ -48,8 +53,10 @@ namespace My.Models
     {
         public int DescriptorId { get; set; }
 
+        [JsonIgnore]
         public int EntityId { get; set; }
 
+        [JsonIgnore]
         public virtual Entity Entity { get; set; }
 
         public string Desc { get; set; }
