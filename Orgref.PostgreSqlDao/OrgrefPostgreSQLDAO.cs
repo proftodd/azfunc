@@ -26,10 +26,10 @@ namespace Orgref.PostgreSqlDao
         public async Task<SearchResult> GetSubstances(string [] searchTerms)
         {
             (string bestSearchTerm, List<string> restOfTheSearchTerms) = BestSearchTerm(searchTerms);
-            IQueryable<Entity> candidates = FirstSearch(bestSearchTerm);
-            for (int i = 0; i < restOfTheSearchTerms.Count; ++i)
+            IQueryable<Entity> candidates = SearchCandidates(ctx.Entities, bestSearchTerm);
+            foreach(var st in restOfTheSearchTerms)
             {
-                candidates = NextSearch(candidates, restOfTheSearchTerms[i]);
+                candidates = SearchCandidates(candidates, st);
             }
 
             var entityList = await candidates.ToListAsync();
@@ -57,21 +57,7 @@ namespace Orgref.PostgreSqlDao
             }
         }
 
-        private IQueryable<Entity> FirstSearch(string searchTerm)
-        {
-            if (NUM_9000_PATTERN.Match(searchTerm).Success)
-            {
-                return ctx.Entities.Where(e => e.Num.Num == int.Parse(searchTerm));
-            } else if (INCHI_KEY_PATTERN.Match(searchTerm).Success)
-            {
-                return ctx.Entities.Where(e => e.Sub.InchiKey == searchTerm);
-            } else
-            {
-                return ctx.Entities.Where(e => e.Descriptors.Any(d => Regex.IsMatch(d.Desc, searchTerm, RegexOptions.IgnoreCase)));
-            }
-        }
-
-        private IQueryable<Entity> NextSearch(IQueryable<Entity> candidates, string searchTerm)
+        private IQueryable<Entity> SearchCandidates(IQueryable<Entity> candidates, string searchTerm)
         {
             if (NUM_9000_PATTERN.Match(searchTerm).Success)
             {
